@@ -1,8 +1,11 @@
+import { Hero } from "@/components/sections/Hero";
 import { NAV_ITEMS } from "@/lib/nav";
 
 export default function HomePage() {
   return (
     <>
+      <Hero />
+      
       {NAV_ITEMS.map(({ id, label }) => (
         <section
           key={id}

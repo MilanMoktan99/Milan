@@ -30,6 +30,11 @@ export function Loader() {
         setDone(true);
       };
 
+      const reveal = () => {
+        document.documentElement.dataset.revealed = "true";
+        window.dispatchEvent(new Event("site:reveal"));
+      };
+
       const play = contextSafe!(() => {
         if (cancelled) return;
         const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -38,11 +43,15 @@ export function Loader() {
           gsap
             .timeline({ onComplete: finish })
             .set(".loader-content", { autoAlpha: 1 })
+            .call(reveal, [], 0.8)
             .to(rootRef.current, { autoAlpha: 0, duration: 0.4, delay: 0.8 });
           return;
         }
 
-        split = SplitText.create(".loader-name", { type: "chars", mask: "chars" });
+        split = SplitText.create(".loader-name", {
+          type: "chars",
+          mask: "chars",
+        });
 
         gsap
           .timeline({ defaults: { ease: "power4.out" }, onComplete: finish })
@@ -51,19 +60,24 @@ export function Loader() {
           .fromTo(
             ".loader-tagline",
             { clipPath: "inset(-30% 100% -30% -5%)" },
-            { clipPath: "inset(-30% -5% -30% -5%)", duration: 1.2, ease: "power2.inOut" },
-            "-=0.45"
+            {
+              clipPath: "inset(-30% -5% -30% -5%)",
+              duration: 1.2,
+              ease: "power2.inOut",
+            },
+            "-=0.45",
           )
           .to(
             ".loader-content",
             { yPercent: -20, autoAlpha: 0, duration: 0.6, ease: "power3.in" },
-            "+=0.5"
+            "+=0.5",
           )
           .to(
             rootRef.current,
             { yPercent: -100, duration: 0.9, ease: "power4.inOut" },
-            "-=0.25"
-          );
+            "-=0.25",
+          )
+          .call(reveal, [], "<0.2");
       });
 
       document.fonts.ready.then(play);
@@ -73,7 +87,7 @@ export function Loader() {
         split?.revert();
       };
     },
-    { scope: rootRef }
+    { scope: rootRef },
   );
 
   if (done) return null;
