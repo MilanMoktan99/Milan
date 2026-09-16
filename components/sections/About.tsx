@@ -102,9 +102,9 @@ export function About() {
       ref={sectionRef}
       id="about"
       aria-labelledby="about-title"
-      className="py-32 lg:py-40"
+      className="py-16 md:py-20 lg:py-24"
     >
-      <div className="site-grid mb-12 lg:mb-20">
+      <div className="site-grid mb-10 lg:mb-14">
         <div className="about-heading col-span-full lg:col-span-9 lg:col-start-4">
           <h2
             id="about-title"
@@ -174,7 +174,7 @@ export function About() {
 
       {/* Experience */}
       {EXPERIENCE.length > 0 && (
-        <div className="site-grid mt-32 lg:mt-48">
+        <div className="site-grid mt-20 lg:mt-28">
           <div className="col-span-full lg:col-span-9 lg:col-start-4">
             <h3 className="exp-heading mb-8 -my-[0.1em] overflow-clip py-[0.1em] text-[clamp(1.75rem,3.5vw,3rem)] leading-none font-medium tracking-[-0.02em] lg:mb-10">
               <span className="exp-heading-inner block">Experience</span>

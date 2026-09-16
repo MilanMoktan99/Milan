@@ -60,3 +60,13 @@ body {
     opacity: 0;
   }
 }
+
+@utility section-y {
+  padding-block: 4rem;
+  @media (width >= 48rem) {
+    padding-block: 5rem;
+  }
+  @media (width >= 64rem) {
+    padding-block: 6rem;
+  }
+}

@@ -163,7 +163,7 @@ export function Work({ projects }: { projects: Project[] }) {
       ref={sectionRef}
       id="work"
       aria-labelledby="work-title"
-      className="py-32 lg:py-40"
+      className="py-16 md:py-20 lg:py-24"
     >
       <div className="site-grid mb-10 lg:mb-14">
         <div className="work-heading col-span-full flex items-end justify-between gap-6 lg:col-span-9 lg:col-start-4">
