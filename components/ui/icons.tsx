@@ -34,3 +34,33 @@ export const GridIcon = () => (
     <path d="M5 4v16M9.5 4v16M14.5 4v16M19 4v16" />
   </svg>
 );
+
+type IconProps = { className?: string };
+
+const arrowProps = {
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.75,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  "aria-hidden": true,
+};
+
+export const ArrowRightIcon = ({ className = "size-4" }: IconProps) => (
+  <svg {...arrowProps} className={className}>
+    <path d="M5 12h14M13 6l6 6-6 6" />
+  </svg>
+);
+
+export const ArrowLeftIcon = ({ className = "size-4" }: IconProps) => (
+  <svg {...arrowProps} className={className}>
+    <path d="M19 12H5M11 6l-6 6 6 6" />
+  </svg>
+);
+
+export const ArrowUpRightIcon = ({ className = "size-4" }: IconProps) => (
+  <svg {...arrowProps} className={className}>
+    <path d="M7 17 17 7M8 7h9v9" />
+  </svg>
+);

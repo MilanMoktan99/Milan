@@ -3,9 +3,25 @@
 import { useEffect, useRef, useState } from "react";
 import { useLenis } from "lenis/react";
 import { gsap, SplitText, useGSAP } from "@/lib/gsap";
+import { session } from "@/lib/session";
+
+function markRevealed() {
+  const root = document.documentElement;
+  if (root.dataset.revealed === "true") return;
+  root.dataset.revealed = "true";
+  window.dispatchEvent(new Event("site:reveal"));
+}
+
+function shouldSkipIntro() {
+  return (
+    session.introPlayed ||
+    (session.entryPath !== null && session.entryPath !== "/")
+  );
+}
 
 export function Loader() {
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState(shouldSkipIntro);
+  const skip = useRef(done);
   const rootRef = useRef<HTMLDivElement>(null);
   const lenis = useLenis();
 
@@ -18,6 +34,11 @@ export function Loader() {
 
   useGSAP(
     (_, contextSafe) => {
+      if (skip.current) {
+        markRevealed();
+        return;
+      }
+
       if ("scrollRestoration" in history) history.scrollRestoration = "manual";
       window.scrollTo(0, 0);
 
@@ -25,14 +46,9 @@ export function Loader() {
       let split: SplitText | undefined;
 
       const finish = () => {
+        session.introPlayed = true;
         document.documentElement.dataset.loaded = "true";
-        window.dispatchEvent(new Event("site:loaded"));
         setDone(true);
-      };
-
-      const reveal = () => {
-        document.documentElement.dataset.revealed = "true";
-        window.dispatchEvent(new Event("site:reveal"));
       };
 
       const play = contextSafe!(() => {
@@ -43,15 +59,12 @@ export function Loader() {
           gsap
             .timeline({ onComplete: finish })
             .set(".loader-content", { autoAlpha: 1 })
-            .call(reveal, [], 0.8)
+            .call(markRevealed, [], 0.8)
             .to(rootRef.current, { autoAlpha: 0, duration: 0.4, delay: 0.8 });
           return;
         }
 
-        split = SplitText.create(".loader-name", {
-          type: "chars",
-          mask: "chars",
-        });
+        split = SplitText.create(".loader-name", { type: "chars", mask: "chars" });
 
         gsap
           .timeline({ defaults: { ease: "power4.out" }, onComplete: finish })
@@ -60,24 +73,20 @@ export function Loader() {
           .fromTo(
             ".loader-tagline",
             { clipPath: "inset(-30% 100% -30% -5%)" },
-            {
-              clipPath: "inset(-30% -5% -30% -5%)",
-              duration: 1.2,
-              ease: "power2.inOut",
-            },
-            "-=0.45",
+            { clipPath: "inset(-30% -5% -30% -5%)", duration: 1.2, ease: "power2.inOut" },
+            "-=0.45"
           )
           .to(
             ".loader-content",
             { yPercent: -20, autoAlpha: 0, duration: 0.6, ease: "power3.in" },
-            "+=0.5",
+            "+=0.5"
           )
           .to(
             rootRef.current,
             { yPercent: -100, duration: 0.9, ease: "power4.inOut" },
-            "-=0.25",
+            "-=0.25"
           )
-          .call(reveal, [], "<0.2");
+          .call(markRevealed, [], "<0.2");
       });
 
       document.fonts.ready.then(play);
@@ -87,7 +96,7 @@ export function Loader() {
         split?.revert();
       };
     },
-    { scope: rootRef },
+    { scope: rootRef }
   );
 
   if (done) return null;
@@ -100,12 +109,12 @@ export function Loader() {
       className="fixed inset-0 z-[100] flex items-center bg-bg px-(--grid-margin) text-fg"
     >
       <div className="loader-content invisible">
-        <p className="loader-name text-[clamp(3rem,8vw,6rem)] leading-[0.95] font-normal tracking-tight">
+        <p className="loader-name text-[clamp(3rem,10vw,9rem)] leading-[0.95] font-medium tracking-tight">
           Milan Moktan
         </p>
         <p className="mt-1 pl-[0.6em] text-[clamp(2.25rem,5.5vw,5rem)] leading-tight text-muted">
           <span className="loader-tagline inline-block font-script">
-            -Designer and Developer
+            Designer and Developer
           </span>
         </p>
       </div>

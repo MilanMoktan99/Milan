@@ -31,7 +31,7 @@ export function Sidebar() {
                   onClick={(e) => handleClick(e, item.id)}
                   aria-current={isActive ? "location" : undefined}
                   className={`text-md transition-colors duration-300 ${
-                    isActive ? "text-fg font-semibold" : "text-muted hover:text-fg"
+                    isActive ? "text-fg font-semibold" : "text-muted hover:text-fg hover:font-semibold"
                   }`}
                 >
                   {item.label}
