@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
     loader: "custom",
     loaderFile: "./lib/cloudinary-loader.ts",
   },
+  serverExternalPackages: ["firebase-admin", "cloudinary"],
 };
 
 export default nextConfig;
