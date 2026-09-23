@@ -17,6 +17,7 @@ const script = Allura({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://milanmoktan99.com.np"),
   title: "Milan Moktan — UI/UX Designer & Web Developer",
   description: "Portfolio of Milan Moktan, a UI/UX designer and web developer.",
 };
