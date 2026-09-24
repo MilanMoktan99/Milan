@@ -9,7 +9,7 @@ export const THEMES = [
   { id: "forest", label: "Forest", scheme: "dark", bg: "#10241a", fg: "#e5efe8", muted: "#93aa9c", accent: "#7ed79d", border: "#1f3a2b" },
   { id: "midnight", label: "Midnight", scheme: "dark", bg: "#0b1328", fg: "#e6ecf8", muted: "#8e9bb5", accent: "#6fa8ff", border: "#1c2742" },
   { id: "dark", label: "Dark", scheme: "dark", bg: "#000000", fg: "#ffffff", muted: "#8a8a8a", accent: "#ff5a1f", border: "#262626" },
-  { id: "high-contrast", label: "High contrast", scheme: "dark", bg: "#000000", fg: "#ffffff", muted: "#e6e6e6", accent: "#ffd600", border: "#ffffff" },
+  { id: "high-contrast", label: "High contrast", scheme: "dark", bg: "#000000", fg: "#ffffff", muted: "#8a8a8a", accent: "#ffd600", border: "#ffffff" },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];

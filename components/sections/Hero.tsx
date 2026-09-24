@@ -2,22 +2,7 @@
 
 import { Fragment, useEffect, useRef, useState } from "react";
 import { gsap, useGSAP } from "@/lib/gsap";
-
-// Edit this content freely. Later it can come from Firebase.
-const CONTENT = {
-  eyebrow: "Milan Moktan — UI/UX Designer & Web Developer",
-  summary:
-    "I design interfaces in Figma and build them with Next.js and React, so the product that ships looks and works the way it was designed.",
-  location: "Based in Kathmandu, Nepal",
-  availability: "Open to freelance and full-time roles",
-  stack: [
-    { label: "Design", items: ["Figma", "Canva"] },
-    {
-      label: "Build",
-      items: ["Next.js", "React", "Tailwind CSS", "Firebase", "MongoDB", "SQL"],
-    },
-  ],
-};
+import type { HeroContent } from "@/types";
 
 type Size = { w: number; h: number } | null;
 
@@ -28,7 +13,7 @@ const HANDLES = [
   "-bottom-1 -right-1",
 ];
 
-function DesignFrame({ size }: { size: Size }) {
+function DesignFrame({ size, label }: { size: Size; label: string }) {
   return (
     <span
       aria-hidden
@@ -43,9 +28,11 @@ function DesignFrame({ size }: { size: Size }) {
         />
       ))}
 
-      <span className="frame-meta absolute bottom-full left-0 mb-2 text-[clamp(0.625rem,1vw,0.8125rem)] leading-none font-medium tracking-normal whitespace-nowrap text-accent">
-        Frame — UI/UX
-      </span>
+      {label && (
+        <span className="frame-meta absolute bottom-full left-0 mb-2 text-[clamp(0.625rem,1vw,0.8125rem)] leading-none font-medium tracking-normal whitespace-nowrap text-accent">
+          {label}
+        </span>
+      )}
 
       <span className="frame-meta absolute top-full left-1/2 mt-2 -translate-x-1/2 rounded-sm bg-accent px-1.5 py-1 text-[clamp(0.625rem,0.9vw,0.75rem)] leading-none font-medium tracking-normal whitespace-nowrap text-bg tabular-nums">
         {size ? `${size.w} × ${size.h}` : "0 × 0"}
@@ -54,7 +41,7 @@ function DesignFrame({ size }: { size: Size }) {
   );
 }
 
-export function Hero() {
+export function Hero({ hero }: { hero: HeroContent }) {
   const sectionRef = useRef<HTMLElement>(null);
   const wordRef = useRef<HTMLSpanElement>(null);
   const [size, setSize] = useState<Size>(null);
@@ -109,7 +96,13 @@ export function Hero() {
         )
         .from(
           ".frame-meta",
-          { autoAlpha: 0, y: 6, duration: 0.5, stagger: 0.08 },
+          {
+            autoAlpha: 0,
+            y: 6,
+            duration: 0.5,
+            stagger: 0.08,
+            clearProps: "opacity,visibility,transform",
+          },
           "-=0.2",
         )
         .from(".code-open", { autoAlpha: 0, xPercent: -80, duration: 0.7 }, "<")
@@ -123,6 +116,7 @@ export function Hero() {
             duration: 0.8,
             stagger: 0.08,
             ease: "power3.out",
+            clearProps: "opacity,visibility,transform",
           },
           "-=0.7",
         );
@@ -155,7 +149,7 @@ export function Hero() {
 
       return () => window.removeEventListener("site:reveal", play);
     },
-    { scope: sectionRef },
+    { scope: sectionRef, dependencies: [hero.designWord, hero.devWord] },
   );
 
   return (
@@ -167,14 +161,12 @@ export function Hero() {
       <div className="site-grid flex-1 content-center pt-28 pb-16 lg:pt-24">
         <div className="col-span-full mb-10 overflow-clip lg:col-span-9 lg:col-start-4">
           <p className="hero-eyebrow text-sm font-medium tracking-wide text-muted uppercase">
-            {CONTENT.eyebrow}
+            {hero.eyebrow}
           </p>
         </div>
 
         <h1 className="col-span-full lg:col-span-9 lg:col-start-4">
-          <span className="sr-only">
-            Milan Moktan, UI/UX Designer and Web Developer
-          </span>
+          <span className="sr-only">{hero.headingAlt}</span>
 
           <span
             aria-hidden
@@ -185,10 +177,10 @@ export function Hero() {
               <span className="hero-track-1 relative inline-block">
                 <span className="-my-[0.1em] block overflow-clip py-[0.1em]">
                   <span ref={wordRef} className="hero-line-inner block">
-                    Designer
+                    {hero.designWord}
                   </span>
                 </span>
-                <DesignFrame size={size} />
+                <DesignFrame size={size} label={hero.frameLabel} />
               </span>
             </span>
 
@@ -200,7 +192,7 @@ export function Hero() {
                     <span className="code-open mr-[0.04em] text-[0.6em] font-normal text-muted">
                       &lt;
                     </span>
-                    Developer
+                    {hero.devWord}
                     <span className="code-close ml-[0.06em] text-[0.6em] font-normal text-muted">
                       /&gt;
                     </span>
@@ -217,29 +209,33 @@ export function Hero() {
 
       <div className="site-grid gap-y-8 pb-32 lg:pb-12">
         <p className="hero-fade col-span-full max-w-[38ch] text-lg leading-snug text-balance text-muted md:col-span-4 lg:col-span-4 lg:col-start-4">
-          {CONTENT.summary}
+          {hero.summary}
         </p>
 
-        <dl className="hero-fade col-span-full grid grid-cols-[auto_1fr] content-start gap-x-6 gap-y-2 text-sm md:col-span-4 lg:col-span-3 lg:col-start-8">
-          {CONTENT.stack.map((group) => (
-            <Fragment key={group.label}>
-              <dt className="pt-0.5 text-xs tracking-wider text-muted uppercase">
-                {group.label}
-              </dt>
-              <dd>{group.items.join(", ")}</dd>
-            </Fragment>
-          ))}
-        </dl>
+        {hero.stack.length > 0 && (
+          <dl className="hero-fade col-span-full grid grid-cols-[auto_1fr] content-start gap-x-6 gap-y-2 text-sm md:col-span-4 lg:col-span-3 lg:col-start-8">
+            {hero.stack.map((group, i) => (
+              <Fragment key={`${group.label}-${i}`}>
+                <dt className="pt-0.5 text-xs tracking-wider text-muted uppercase">
+                  {group.label}
+                </dt>
+                <dd>{group.items.join(", ")}</dd>
+              </Fragment>
+            ))}
+          </dl>
+        )}
 
         <div className="hero-fade col-span-full text-sm md:col-span-8 lg:col-span-2 lg:col-start-11 lg:text-right">
-          <p>{CONTENT.location}</p>
-          <p className="mt-1 text-muted">
-            <span
-              aria-hidden
-              className="mr-2 inline-block size-2 -translate-y-px rounded-full bg-accent align-middle"
-            />
-            {CONTENT.availability}
-          </p>
+          {hero.location && <p>{hero.location}</p>}
+          {hero.availability && (
+            <p className="mt-1 text-muted">
+              <span
+                aria-hidden
+                className="mr-2 inline-block size-2 -translate-y-px rounded-full bg-accent align-middle"
+              />
+              {hero.availability}
+            </p>
+          )}
         </div>
       </div>
     </section>

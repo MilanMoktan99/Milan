@@ -3,9 +3,9 @@
 import Image from "next/image";
 import { useRef } from "react";
 import { gsap, SplitText, useGSAP } from "@/lib/gsap";
-import { ABOUT, EXPERIENCE } from "@/lib/content/about";
+import type { AboutContent } from "@/types";
 
-export function About() {
+export function About({ about }: { about: AboutContent }) {
   const sectionRef = useRef<HTMLElement>(null);
 
   useGSAP(
@@ -94,7 +94,7 @@ export function About() {
           );
       });
     },
-    { scope: sectionRef }
+    { scope: sectionRef, dependencies: [about.experience.length] }
   );
 
   return (
@@ -121,10 +121,10 @@ export function About() {
           <div className="about-photo relative aspect-[4/5] max-w-sm overflow-clip rounded-sm bg-fg/5 md:sticky md:top-24 md:max-w-none">
             <div className="about-photo-parallax absolute inset-x-0 -top-[6%] -bottom-[6%]">
               <div className="about-photo-inner absolute inset-0">
-                {ABOUT.photo.src ? (
+                {about.photoUrl ? (
                   <Image
-                    src={ABOUT.photo.src}
-                    alt={ABOUT.photo.alt}
+                    src={about.photoUrl}
+                    alt={about.photoAlt}
                     fill
                     sizes="(min-width: 1024px) 22vw, (min-width: 768px) 36vw, 384px"
                     className="object-cover"
@@ -141,24 +141,24 @@ export function About() {
 
         <div className="col-span-full md:col-span-5 lg:col-span-5 lg:col-start-8">
           <p className="about-lead text-[clamp(1.5rem,2.5vw,2.375rem)] leading-[1.2] font-medium tracking-[-0.02em]">
-            {ABOUT.lead}
+            {about.lead}
           </p>
 
           <div className="mt-10 max-w-[52ch] space-y-5 text-lg leading-relaxed text-muted">
-            {ABOUT.paragraphs.map((paragraph) => (
-              <p key={paragraph} className="about-fade">
+            {about.paragraphs.map((paragraph, i) => (
+              <p key={i} className="about-fade">
                 {paragraph}
               </p>
             ))}
           </div>
 
-          {ABOUT.values.length > 0 && (
+          {about.values.length > 0 && (
             <div className="about-fade mt-10">
-              <h3 className="text-xs tracking-wider text-muted uppercase">
+              <h3 className="text-xs tracking-wider text-muted uppercase font-bold">
                 What I value
               </h3>
               <ul className="mt-3 flex flex-wrap gap-2">
-                {ABOUT.values.map((value) => (
+                {about.values.map((value) => (
                   <li
                     key={value}
                     className="rounded-full border border-fg/25 px-4 py-1.5 text-sm"
@@ -173,7 +173,7 @@ export function About() {
       </div>
 
       {/* Experience */}
-      {EXPERIENCE.length > 0 && (
+      {about.experience.length > 0 && (
         <div className="site-grid mt-20 lg:mt-28">
           <div className="col-span-full lg:col-span-9 lg:col-start-4">
             <h3 className="exp-heading mb-8 -my-[0.1em] overflow-clip py-[0.1em] text-[clamp(1.75rem,3.5vw,3rem)] leading-none font-medium tracking-[-0.02em] lg:mb-10">
@@ -181,16 +181,16 @@ export function About() {
             </h3>
 
             <ol>
-              {EXPERIENCE.map((item, i) => (
+              {about.experience.map((item, i) => (
                 <li
-                  key={`${item.company}-${item.period}`}
+                  key={item.id}
                   className="exp-row relative grid gap-x-8 gap-y-2 py-6 md:grid-cols-[11rem_1fr_auto] lg:py-8"
                 >
                   <span
                     aria-hidden
                     className="exp-line absolute inset-x-0 top-0 h-px origin-left bg-border"
                   />
-                  {i === EXPERIENCE.length - 1 && (
+                  {i === about.experience.length - 1 && (
                     <span
                       aria-hidden
                       className="exp-line absolute inset-x-0 bottom-0 h-px origin-left bg-border"

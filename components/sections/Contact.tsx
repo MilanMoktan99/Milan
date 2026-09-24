@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { gsap, SplitText, useGSAP } from "@/lib/gsap";
-import { CONTACT } from "@/lib/content/contact";
 import { session } from "@/lib/session";
+import type { ContactContent } from "@/types";
 
 const linkClass =
   "rounded-sm underline decoration-fg/35 decoration-1 underline-offset-[6px] transition-[text-decoration-color] duration-300 hover:decoration-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent";
 
-export function Contact() {
+export function Contact({ contact }: { contact: ContactContent }) {
   const sectionRef = useRef<HTMLElement>(null);
   const [service, setService] = useState<string | null>(() => session.selectedService);
   const [copied, setCopied] = useState(false);
@@ -37,7 +37,12 @@ export function Contact() {
           defaults: { ease: "power4.out" },
           scrollTrigger: { trigger: ".contact-message", start: "top 80%" },
         })
-        .from(".contact-status", { y: 16, autoAlpha: 0, duration: 0.7 })
+        .from(".contact-status", {
+          y: 16,
+          autoAlpha: 0,
+          duration: 0.7,
+          clearProps: "opacity,visibility,transform",
+        })
         .from(split.lines, { yPercent: 110, duration: 1.1, stagger: 0.1 }, "<0.1");
 
       gsap.from(".contact-foot > *", {
@@ -46,20 +51,21 @@ export function Contact() {
         duration: 0.8,
         stagger: 0.08,
         ease: "power3.out",
+        clearProps: "opacity,visibility,transform",
         scrollTrigger: { trigger: ".contact-foot", start: "top 95%" },
       });
     },
-    { scope: sectionRef }
+    { scope: sectionRef, dependencies: [contact.message, contact.socials.length] }
   );
 
   const subject = service ? `${service} project inquiry` : "Project inquiry";
-  const mailto = `mailto:${CONTACT.email}?subject=${encodeURIComponent(subject)}`;
+  const mailto = `mailto:${contact.email}?subject=${encodeURIComponent(subject)}`;
 
   const copyEmail = async () => {
     try {
-      await navigator.clipboard.writeText(CONTACT.email);
+      await navigator.clipboard.writeText(contact.email);
     } catch {
-      window.prompt("Copy my email address:", CONTACT.email);
+      window.prompt("Copy my email address:", contact.email);
       return;
     }
     setCopied(true);
@@ -72,21 +78,23 @@ export function Contact() {
       ref={sectionRef}
       id="contact"
       aria-labelledby="contact-title"
-      className="flex flex-col min-h-[75svh] pt-16 md:pt-20 lg:pt-24"
+      className="flex min-h-[75svh] flex-col pt-16 md:pt-20 lg:pt-24"
     >
-      <div className="site-grid flex-1 content-center">
+      <div className="site-grid flex-1 content-center py-16">
         <div className="col-span-full md:col-span-6 lg:col-span-6 lg:col-start-4">
           <h2 id="contact-title" className="sr-only">
             Contact
           </h2>
 
-          <p className="contact-status flex items-center gap-3 text-muted">
-            <span aria-hidden className="size-2 shrink-0 rounded-full bg-accent" />
-            {CONTACT.availability}
-          </p>
+          {contact.availability && (
+            <p className="contact-status flex items-center gap-3 text-muted">
+              <span aria-hidden className="size-2 shrink-0 rounded-full bg-accent" />
+              {contact.availability}
+            </p>
+          )}
 
           <p className="contact-message mt-3 max-w-[24ch] text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.15] font-medium tracking-[-0.02em]">
-            {CONTACT.message}
+            {contact.message}
           </p>
         </div>
       </div>
@@ -96,7 +104,7 @@ export function Contact() {
           <ul className="flex flex-wrap items-center gap-x-10 gap-y-4 text-lg">
             <li className="flex items-center gap-3">
               <a href={mailto} className={linkClass}>
-                {CONTACT.email}
+                {contact.email}
               </a>
               <button
                 type="button"
@@ -110,8 +118,8 @@ export function Contact() {
               </span>
             </li>
 
-            {CONTACT.socials.map((social) => (
-              <li key={social.label}>
+            {contact.socials.map((social) => (
+              <li key={social.id}>
                 <a
                   href={social.href}
                   target="_blank"

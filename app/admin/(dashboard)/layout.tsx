@@ -18,6 +18,24 @@ export default async function DashboardLayout({
           </Link>
           <div className="flex items-center gap-6 text-sm">
             <Link
+              href="/admin/hero"
+              className="text-muted transition-colors hover:text-fg"
+            >
+              Intro
+            </Link>
+            <Link
+              href="/admin/about"
+              className="text-muted transition-colors hover:text-fg"
+            >
+              About
+            </Link>
+            <Link
+              href="/admin/contact"
+              className="text-muted transition-colors hover:text-fg"
+            >
+              Contact
+            </Link>
+            <Link
               href="/"
               target="_blank"
               className="text-muted transition-colors hover:text-fg"

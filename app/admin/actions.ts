@@ -12,6 +12,9 @@ import {
 import { adminDb } from "@/lib/server/firebase-admin";
 import { getCloudinary } from "@/lib/server/cloudinary";
 import type { ProjectInput } from "@/types";
+import type { AboutContent } from "@/types";
+import type { HeroContent } from "@/types";
+import type { ContactContent } from "@/types";
 
 type Result = { ok: true } | { ok: false; error: string };
 
@@ -50,8 +53,11 @@ async function destroyAssets(publicIds: (string | null | undefined)[]) {
   const { cloudinary } = getCloudinary();
   const results = await Promise.allSettled(
     ids.map((id) =>
-      cloudinary.uploader.destroy(id, { resource_type: "image", invalidate: true })
-    )
+      cloudinary.uploader.destroy(id, {
+        resource_type: "image",
+        invalidate: true,
+      }),
+    ),
   );
   results.forEach((result) => {
     if (result.status === "rejected") {
@@ -71,7 +77,7 @@ export type LoginState = { error: string } | null;
 
 export async function login(
   _prev: LoginState,
-  formData: FormData
+  formData: FormData,
 ): Promise<LoginState> {
   const username = String(formData.get("username") ?? "");
   const password = String(formData.get("password") ?? "");
@@ -96,7 +102,7 @@ export async function getUploadConfig(kind: "cover" | "pdf", slug: string) {
   if (!(await isAdmin())) {
     return { ok: false as const, error: SESSION_EXPIRED };
   }
-  if (!SLUG_RE.test(slug)) {
+  if (slug !== "about" && !SLUG_RE.test(slug)) {
     return {
       ok: false as const,
       error: "Add a valid project name and slug before uploading.",
@@ -107,7 +113,9 @@ export async function getUploadConfig(kind: "cover" | "pdf", slug: string) {
   const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET;
 
   if (!cloudName || !uploadPreset) {
-    console.error("[admin] Missing CLOUDINARY_CLOUD_NAME or CLOUDINARY_UPLOAD_PRESET");
+    console.error(
+      "[admin] Missing CLOUDINARY_CLOUD_NAME or CLOUDINARY_UPLOAD_PRESET",
+    );
     return {
       ok: false as const,
       error: "Uploads aren't configured yet. Check the terminal for details.",
@@ -127,7 +135,7 @@ export async function getUploadConfig(kind: "cover" | "pdf", slug: string) {
 
 export async function saveProject(
   input: ProjectInput,
-  mode: "create" | "edit"
+  mode: "create" | "edit",
 ): Promise<Result> {
   if (!(await isAdmin())) return fail(SESSION_EXPIRED);
 
@@ -139,7 +147,9 @@ export async function saveProject(
   const order = Number(input.order);
 
   if (!SLUG_RE.test(slug)) {
-    return fail("The slug can only use lowercase letters, numbers, and hyphens.");
+    return fail(
+      "The slug can only use lowercase letters, numbers, and hyphens.",
+    );
   }
   if (!name) return fail("Add a project name.");
   if (input.type !== "design" && input.type !== "development") {
@@ -187,7 +197,9 @@ export async function saveProject(
 
       // Remove files that were replaced or removed
       await destroyAssets([
-        previous.coverPublicId !== data.coverPublicId ? previous.coverPublicId : null,
+        previous.coverPublicId !== data.coverPublicId
+          ? previous.coverPublicId
+          : null,
         previous.pdfPublicId !== data.pdfPublicId ? previous.pdfPublicId : null,
       ]);
     }
@@ -196,7 +208,9 @@ export async function saveProject(
       return fail(`A project with the slug "${slug}" already exists.`);
     }
     console.error("[admin] Failed to save project:", error);
-    return fail("Something went wrong while saving. Check the terminal for details.");
+    return fail(
+      "Something went wrong while saving. Check the terminal for details.",
+    );
   }
 
   refreshSite();
@@ -220,5 +234,161 @@ export async function deleteProject(slug: string): Promise<Result> {
   }
 
   refreshSite();
+  return { ok: true };
+}
+
+/* ---------- ABOUTS ---------- */
+export async function saveAbout(input: AboutContent): Promise<Result> {
+  if (!(await isAdmin())) return fail(SESSION_EXPIRED);
+
+  const { cloudName } = getCloudinary();
+  const photoUrl = input.photoUrl.trim();
+
+  if (photoUrl && !isCloudinaryUrl(photoUrl, cloudName)) {
+    return fail("Upload your photo using this form.");
+  }
+  if (!input.lead.trim()) return fail("Add an opening line for your bio.");
+
+  const clean = (value: string) => value.trim();
+
+  const data = {
+    photoUrl,
+    photoPublicId: photoUrl ? input.photoPublicId : "",
+    photoAlt: clean(input.photoAlt),
+    lead: clean(input.lead),
+    paragraphs: input.paragraphs.map(clean).filter(Boolean),
+    values: input.values.map(clean).filter(Boolean),
+    experience: input.experience
+      .filter((item) => item.role.trim() || item.company.trim())
+      .map((item, i) => ({
+        id: item.id || `exp-${Date.now()}-${i}`,
+        period: clean(item.period),
+        role: clean(item.role),
+        company: clean(item.company),
+        type: clean(item.type),
+        description: clean(item.description),
+      })),
+    updatedAt: FieldValue.serverTimestamp(),
+  };
+
+  try {
+    const ref = adminDb().collection("content").doc("about");
+    const existing = await ref.get();
+    const previousPhotoId = existing.exists
+      ? existing.data()?.photoPublicId
+      : null;
+
+    await ref.set(data, { merge: true });
+
+    if (previousPhotoId && previousPhotoId !== data.photoPublicId) {
+      await destroyAssets([previousPhotoId]);
+    }
+  } catch (error) {
+    console.error("[admin] Failed to save About:", error);
+    return fail(
+      "Something went wrong while saving. Check the terminal for details.",
+    );
+  }
+
+  revalidatePath("/");
+  return { ok: true };
+}
+
+/* ---------- HERO ---------- */
+export async function saveHero(input: HeroContent): Promise<Result> {
+  if (!(await isAdmin())) return fail(SESSION_EXPIRED);
+
+  const clean = (value: string) => value.trim();
+
+  if (!clean(input.designWord) || !clean(input.devWord)) {
+    return fail("Both headline words are required.");
+  }
+  if (!clean(input.headingAlt)) {
+    return fail("Add a plain-text version of the headline for screen readers.");
+  }
+
+  const data = {
+    eyebrow: clean(input.eyebrow),
+    designWord: clean(input.designWord),
+    devWord: clean(input.devWord),
+    frameLabel: clean(input.frameLabel),
+    headingAlt: clean(input.headingAlt),
+    summary: clean(input.summary),
+    location: clean(input.location),
+    availability: clean(input.availability),
+    stack: input.stack
+      .map((group) => ({
+        label: clean(group.label),
+        items: group.items.map(clean).filter(Boolean),
+      }))
+      .filter((group) => group.items.length > 0),
+    updatedAt: FieldValue.serverTimestamp(),
+  };
+
+  try {
+    await adminDb()
+      .collection("content")
+      .doc("hero")
+      .set(data, { merge: true });
+  } catch (error) {
+    console.error("[admin] Failed to save Hero:", error);
+    return fail(
+      "Something went wrong while saving. Check the terminal for details.",
+    );
+  }
+
+  revalidatePath("/");
+  return { ok: true };
+}
+
+/* ---------- CONTACTS ---------- */
+export async function saveContact(input: ContactContent): Promise<Result> {
+  if (!(await isAdmin())) return fail(SESSION_EXPIRED);
+
+  const clean = (value: string) => value.trim();
+  const email = clean(input.email);
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return fail("Add a valid email address.");
+  }
+  if (!clean(input.message)) return fail("Add a message line.");
+
+  const socials = input.socials
+    .map((item, i) => ({
+      id: item.id || `social-${Date.now()}-${i}`,
+      label: clean(item.label),
+      href: clean(item.href),
+    }))
+    .filter((item) => item.label || item.href);
+
+  const invalid = socials.find((item) => !isWebUrl(item.href));
+  if (invalid) {
+    return fail(
+      `The ${invalid.label || "social"} link must start with https://`,
+    );
+  }
+
+  try {
+    await adminDb()
+      .collection("content")
+      .doc("contact")
+      .set(
+        {
+          availability: clean(input.availability),
+          message: clean(input.message),
+          email,
+          socials,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+  } catch (error) {
+    console.error("[admin] Failed to save Contact:", error);
+    return fail(
+      "Something went wrong while saving. Check the terminal for details.",
+    );
+  }
+
+  revalidatePath("/");
   return { ok: true };
 }
