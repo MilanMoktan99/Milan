@@ -71,9 +71,10 @@ async function destroyAssets(publicIds: (string | null | undefined)[]) {
   });
 }
 
-function refreshSite() {
+function refreshSite(slug?: string) {
   revalidatePath("/");
   revalidatePath("/work/[slug]", "page");
+  if (slug) revalidatePath(`/work/${slug}`);
 }
 
 /* ---------- Auth ---------- */
@@ -221,7 +222,7 @@ export async function saveProject(
     );
   }
 
-  refreshSite();
+  refreshSite(slug);
   return { ok: true };
 }
 
@@ -245,7 +246,7 @@ export async function deleteProject(slug: string): Promise<Result> {
     return fail("Something went wrong while deleting.");
   }
 
-  refreshSite();
+  refreshSite(slug);
   return { ok: true };
 }
 
@@ -293,7 +294,7 @@ export async function saveCaseStudy(
     );
   }
 
-  refreshSite();
+  refreshSite(slug);
   return { ok: true };
 }
 

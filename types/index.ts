@@ -5,6 +5,8 @@ export type BlockImage = {
   url: string;
   publicId: string;
   alt: string;
+  width: number;
+  height: number;
 };
 
 export type CaseStudyBlock =

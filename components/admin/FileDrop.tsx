@@ -13,7 +13,12 @@ const ACCEPT = {
   pdf: "application/pdf",
 };
 
-type Uploaded = { url: string; publicId: string };
+type Uploaded = {
+  url: string;
+  publicId: string;
+  width?: number;
+  height?: number;
+};
 
 type Props = {
   kind: "cover" | "pdf";
@@ -122,6 +127,8 @@ export function FileDrop({
       onChange({
         url: String(result.secure_url),
         publicId: String(result.public_id),
+        width: Number(result.width) || 0,
+        height: Number(result.height) || 0,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed.");

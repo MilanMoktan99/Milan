@@ -12,11 +12,18 @@ function parseImage(value: unknown, index: number): BlockImage | null {
   const item = obj(value);
   const url = str(item.url).trim();
   if (!url) return null;
+
+  const width = typeof item.width === "number" ? item.width : 0;
+  const height = typeof item.height === "number" ? item.height : 0;
+
   return {
     id: str(item.id) || `img-${index}`,
     url,
     publicId: str(item.publicId),
     alt: str(item.alt),
+    // Fall back to 16:10 for images uploaded before dimensions were saved
+    width: width || 1600,
+    height: height || 1000,
   };
 }
 

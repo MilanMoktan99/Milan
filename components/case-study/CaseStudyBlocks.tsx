@@ -70,19 +70,24 @@ function Block({ block }: { block: CaseStudyBlock }) {
         </div>
       );
 
-    case "image":
+    case "image": {
+      const tall = block.image.height > block.image.width * 1.2;
       return (
-        <figure className={`cs-block ${block.wide ? COL_WIDE : COL}`}>
-          <div className="relative overflow-clip rounded-sm bg-fg/5">
+        <figure className={`cs-block ${block.wide && !tall ? COL_WIDE : COL}`}>
+          <div
+            className={`overflow-clip rounded-sm bg-fg/5 ${tall ? "mx-auto max-w-md" : ""}`}
+          >
             <Image
               src={block.image.url}
               alt={block.image.alt}
-              width={1600}
-              height={1000}
+              width={block.image.width}
+              height={block.image.height}
               sizes={
-                block.wide
-                  ? "(min-width: 1024px) 82vw, 100vw"
-                  : "(min-width: 1024px) 66vw, 100vw"
+                tall
+                  ? "(min-width: 768px) 28rem, 100vw"
+                  : block.wide
+                    ? "(min-width: 1024px) 82vw, 100vw"
+                    : "(min-width: 1024px) 66vw, 100vw"
               }
               className="h-auto w-full"
             />
@@ -92,26 +97,25 @@ function Block({ block }: { block: CaseStudyBlock }) {
           </figcaption>
         </figure>
       );
+    }
 
     case "gallery":
       return (
         <figure className={`cs-block ${COL_WIDE}`}>
           <div
-            className={`grid gap-4 ${
+            className={`grid items-start gap-4 ${
               block.images.length >= 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"
             }`}
           >
             {block.images.map((image) => (
-              <div
-                key={image.id}
-                className="relative aspect-[3/4] overflow-clip rounded-sm bg-fg/5"
-              >
+              <div key={image.id} className="overflow-clip rounded-sm bg-fg/5">
                 <Image
                   src={image.url}
                   alt={image.alt}
-                  fill
+                  width={image.width}
+                  height={image.height}
                   sizes="(min-width: 640px) 30vw, 100vw"
-                  className="object-cover"
+                  className="h-auto w-full"
                 />
               </div>
             ))}

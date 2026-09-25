@@ -16,6 +16,15 @@ import type { BlockType, CaseStudyBlock } from "@/types";
 
 const uid = () => `b-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
+const emptyImage = () => ({
+  id: uid(),
+  url: "",
+  publicId: "",
+  alt: "",
+  width: 0,
+  height: 0,
+});
+
 const BLOCK_LABELS: Record<BlockType, string> = {
   overview: "Overview",
   heading: "Heading",
@@ -48,13 +57,7 @@ function makeBlock(type: BlockType): CaseStudyBlock {
     case "list":
       return { id, type, title: "", items: [""] };
     case "image":
-      return {
-        id,
-        type,
-        image: { id: uid(), url: "", publicId: "", alt: "" },
-        caption: "",
-        wide: false,
-      };
+      return { id, type, image: emptyImage(), caption: "", wide: false };
     case "gallery":
       return { id, type, images: [], caption: "" };
     case "quote":
@@ -265,17 +268,15 @@ export function BlockEditor({ slug, projectName, initial }: Props) {
               kind="cover"
               slug={slug}
               label="Image"
-              value={
-                block.image.url
-                  ? { url: block.image.url, publicId: block.image.publicId }
-                  : null
-              }
+              value={block.image.url ? block.image : null}
               onChange={(file) =>
                 update(block.id, {
                   image: {
                     ...block.image,
                     url: file?.url ?? "",
                     publicId: file?.publicId ?? "",
+                    width: file?.width ?? 0,
+                    height: file?.height ?? 0,
                   },
                 })
               }
@@ -308,6 +309,10 @@ export function BlockEditor({ slug, projectName, initial }: Props) {
               />
               Full width
             </label>
+            <p className={hintClass}>
+              Full width has no effect on tall images, which stay at a readable
+              size.
+            </p>
           </div>
         );
 
@@ -323,11 +328,7 @@ export function BlockEditor({ slug, projectName, initial }: Props) {
                   kind="cover"
                   slug={slug}
                   label={`Image ${i + 1}`}
-                  value={
-                    image.url
-                      ? { url: image.url, publicId: image.publicId }
-                      : null
-                  }
+                  value={image.url ? image : null}
                   onChange={(file) =>
                     update(block.id, {
                       images: block.images.map((item) =>
@@ -336,6 +337,8 @@ export function BlockEditor({ slug, projectName, initial }: Props) {
                               ...item,
                               url: file?.url ?? "",
                               publicId: file?.publicId ?? "",
+                              width: file?.width ?? 0,
+                              height: file?.height ?? 0,
                             }
                           : item,
                       ),
@@ -378,10 +381,7 @@ export function BlockEditor({ slug, projectName, initial }: Props) {
                 type="button"
                 onClick={() =>
                   update(block.id, {
-                    images: [
-                      ...block.images,
-                      { id: uid(), url: "", publicId: "", alt: "" },
-                    ],
+                    images: [...block.images, emptyImage()],
                   })
                 }
                 className={btnSecondary}
