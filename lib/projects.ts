@@ -9,6 +9,7 @@ import {
   type DocumentData,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { parseBlocks } from "@/lib/blocks";
 import type { Project } from "@/types";
 
 const text = (value: unknown) =>
@@ -31,6 +32,7 @@ function toProject(slug: string, data: DocumentData): Project | null {
     summary: text(data.summary) ?? "",
     featured: data.featured === true,
     order: typeof data.order === "number" ? data.order : 999,
+    blocks: parseBlocks(data.blocks),
   };
 }
 
@@ -40,8 +42,8 @@ export const getProjects = cache(async (): Promise<Project[]> => {
       query(
         collection(db, "projects"),
         where("published", "==", true),
-        orderBy("order")
-      )
+        orderBy("order"),
+      ),
     );
     return snapshot.docs
       .map((doc) => toProject(doc.id, doc.data()))

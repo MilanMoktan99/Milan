@@ -30,7 +30,8 @@ export default async function AdminHomePage() {
         <div>
           <h1 className="text-3xl font-medium tracking-tight">Projects</h1>
           <p className="mt-1 text-sm text-muted">
-            Published projects appear on your site. Featured ones show in the Work section.
+            Published projects appear on your site. Featured ones show in the
+            Work section.
           </p>
         </div>
         <Link href="/admin/projects/new" className={btnPrimary}>
@@ -39,7 +40,10 @@ export default async function AdminHomePage() {
       </div>
 
       {projects === null ? (
-        <p role="alert" className="mt-10 rounded-sm border border-border p-5 text-sm">
+        <p
+          role="alert"
+          className="mt-10 rounded-sm border border-border p-5 text-sm"
+        >
           Couldn&apos;t load projects. Check your Firebase Admin environment
           variables and the terminal for details.
         </p>
@@ -65,7 +69,9 @@ export default async function AdminHomePage() {
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="truncate font-medium">{project.name || project.slug}</p>
+                <p className="truncate font-medium">
+                  {project.name || project.slug}
+                </p>
                 <p className="mt-0.5 text-sm text-muted">
                   {PROJECT_TYPE_LABEL[project.type]}
                   {project.timeline && ` · ${project.timeline}`}
@@ -76,10 +82,13 @@ export default async function AdminHomePage() {
                   </Badge>
                   {project.featured && <Badge on>Featured</Badge>}
                   <Badge>Order {project.order}</Badge>
+                  {project.blocks.length > 0 && (
+                    <Badge>{project.blocks.length} sections</Badge>
+                  )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-4">
                 {project.published && (
                   <Link
                     href={`/work/${project.slug}`}
@@ -89,7 +98,16 @@ export default async function AdminHomePage() {
                     View
                   </Link>
                 )}
-                <Link href={`/admin/projects/${project.slug}`} className={btnSecondary}>
+                <Link
+                  href={`/admin/projects/${project.slug}/case-study`}
+                  className="text-sm text-muted transition-colors hover:text-fg"
+                >
+                  Case study
+                </Link>
+                <Link
+                  href={`/admin/projects/${project.slug}`}
+                  className={btnSecondary}
+                >
                   Edit
                 </Link>
                 <DeleteProjectButton

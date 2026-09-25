@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getProject, getProjects } from "@/lib/projects";
 import { PROJECT_TYPE_LABEL } from "@/lib/project-labels";
 import { CaseStudyViewer } from "@/components/case-study/CaseStudyViewer";
+import { CaseStudyBlocks } from "@/components/case-study/CaseStudyBlocks";
 import { ProjectTopBar } from "@/components/case-study/ProjectTopBar";
 import { MoreWork } from "@/components/case-study/MoreWork";
 import { SimpleFooter } from "@/components/case-study/SimpleFooter";
@@ -21,7 +22,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const project = await getProject(slug);
-  if (!project) return { title: "Project not found — Milan Moktan" };
+  if (!project) return { title: "Project not found" };
 
   const description =
     project.summary ||
@@ -30,11 +31,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }.`;
 
   return {
-    title: `${project.name} — Milan Moktan`,
+    title: project.name,
     description,
+    alternates: { canonical: `/work/${project.slug}` },
     openGraph: {
+      type: "article",
       title: project.name,
       description,
+      url: `/work/${project.slug}`,
       images: [{ url: project.coverImage, alt: project.coverAlt }],
     },
   };
@@ -102,24 +106,33 @@ export default async function ProjectPage({ params }: Props) {
           </div>
         </header>
 
-        <section aria-label={`${project.name} case study`} className="site-grid">
-          <div className="col-span-full lg:col-span-8 lg:col-start-3">
-            {project.pdfUrl ? (
-              <CaseStudyViewer url={project.pdfUrl} title={project.name} />
-            ) : (
-              <div className="relative aspect-[16/10] overflow-clip rounded-sm bg-fg/5">
-                <Image
-                  src={project.coverImage}
-                  alt={project.coverAlt}
-                  fill
-                  priority
-                  sizes="(min-width: 1024px) 66vw, 100vw"
-                  className="object-cover"
-                />
-              </div>
-            )}
-          </div>
-        </section>
+        {project.blocks.length > 0 ? (
+          <section aria-label={`${project.name} case study`}>
+            <CaseStudyBlocks blocks={project.blocks} />
+          </section>
+        ) : (
+          <section
+            aria-label={`${project.name} case study`}
+            className="site-grid"
+          >
+            <div className="col-span-full lg:col-span-8 lg:col-start-3">
+              {project.pdfUrl ? (
+                <CaseStudyViewer url={project.pdfUrl} title={project.name} />
+              ) : (
+                <div className="relative aspect-[16/10] overflow-clip rounded-sm bg-fg/5">
+                  <Image
+                    src={project.coverImage}
+                    alt={project.coverAlt}
+                    fill
+                    priority
+                    sizes="(min-width: 1024px) 66vw, 100vw"
+                    className="object-cover"
+                  />
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         {others.length > 0 && <MoreWork projects={others} />}
       </main>

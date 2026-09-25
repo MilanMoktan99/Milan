@@ -11,10 +11,14 @@ import {
 } from "@/lib/server/auth";
 import { adminDb } from "@/lib/server/firebase-admin";
 import { getCloudinary } from "@/lib/server/cloudinary";
-import type { ProjectInput } from "@/types";
-import type { AboutContent } from "@/types";
-import type { HeroContent } from "@/types";
-import type { ContactContent } from "@/types";
+import { collectPublicIds, parseBlocks } from "@/lib/blocks";
+import type {
+  AboutContent,
+  CaseStudyBlock,
+  ContactContent,
+  HeroContent,
+  ProjectInput,
+} from "@/types";
 
 type Result = { ok: true } | { ok: false; error: string };
 
@@ -23,6 +27,7 @@ const SESSION_EXPIRED = "Your session expired. Please log in again.";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const fail = (error: string): Result => ({ ok: false, error });
+const clean = (value: string) => value.trim();
 
 function isCloudinaryUrl(url: string, cloudName: string) {
   try {
@@ -139,10 +144,9 @@ export async function saveProject(
 ): Promise<Result> {
   if (!(await isAdmin())) return fail(SESSION_EXPIRED);
 
-  const { cloudName, apiKey } = getCloudinary();
-  console.log("[admin] Using Cloudinary key ending in", apiKey.slice(-4));
-  const slug = input.slug.trim();
-  const name = input.name.trim();
+  const { cloudName } = getCloudinary();
+  const slug = clean(input.slug);
+  const name = clean(input.name);
   const liveUrl = input.liveUrl?.trim() || null;
   const order = Number(input.order);
 
@@ -169,11 +173,11 @@ export async function saveProject(
   const data = {
     name,
     type: input.type,
-    timeline: input.timeline.trim(),
-    summary: input.summary.trim().slice(0, 300),
+    timeline: clean(input.timeline),
+    summary: clean(input.summary).slice(0, 300),
     coverImage: input.coverImage,
     coverPublicId: input.coverPublicId || null,
-    coverAlt: input.coverAlt.trim(),
+    coverAlt: clean(input.coverAlt),
     pdfUrl: input.pdfUrl || null,
     pdfPublicId: input.pdfUrl ? input.pdfPublicId || null : null,
     liveUrl,
@@ -187,7 +191,11 @@ export async function saveProject(
 
   try {
     if (mode === "create") {
-      await ref.create({ ...data, createdAt: FieldValue.serverTimestamp() });
+      await ref.create({
+        ...data,
+        blocks: [],
+        createdAt: FieldValue.serverTimestamp(),
+      });
     } else {
       const existing = await ref.get();
       if (!existing.exists) return fail("This project no longer exists.");
@@ -227,7 +235,11 @@ export async function deleteProject(slug: string): Promise<Result> {
 
     const data = snapshot.data()!;
     await ref.delete();
-    await destroyAssets([data.coverPublicId, data.pdfPublicId]);
+    await destroyAssets([
+      data.coverPublicId,
+      data.pdfPublicId,
+      ...collectPublicIds(parseBlocks(data.blocks)),
+    ]);
   } catch (error) {
     console.error("[admin] Failed to delete project:", error);
     return fail("Something went wrong while deleting.");
@@ -237,19 +249,66 @@ export async function deleteProject(slug: string): Promise<Result> {
   return { ok: true };
 }
 
-/* ---------- ABOUTS ---------- */
+/* ---------- Case study blocks ---------- */
+
+export async function saveCaseStudy(
+  slug: string,
+  blocks: CaseStudyBlock[],
+): Promise<Result> {
+  if (!(await isAdmin())) return fail(SESSION_EXPIRED);
+  if (!SLUG_RE.test(slug)) return fail("Invalid project.");
+
+  const { cloudName } = getCloudinary();
+  const parsed = parseBlocks(blocks);
+
+  const urls = parsed.flatMap((block) =>
+    block.type === "image"
+      ? [block.image.url]
+      : block.type === "gallery"
+        ? block.images.map((image) => image.url)
+        : [],
+  );
+  if (urls.some((url) => !isCloudinaryUrl(url, cloudName))) {
+    return fail("Upload images using this form.");
+  }
+
+  try {
+    const ref = adminDb().collection("projects").doc(slug);
+    const snapshot = await ref.get();
+    if (!snapshot.exists) return fail("This project no longer exists.");
+
+    const previousIds = collectPublicIds(parseBlocks(snapshot.data()?.blocks));
+    const nextIds = new Set(collectPublicIds(parsed));
+
+    await ref.set(
+      { blocks: parsed, updatedAt: FieldValue.serverTimestamp() },
+      { merge: true },
+    );
+
+    await destroyAssets(previousIds.filter((id) => !nextIds.has(id)));
+  } catch (error) {
+    console.error("[admin] Failed to save case study:", error);
+    return fail(
+      "Something went wrong while saving. Check the terminal for details.",
+    );
+  }
+
+  refreshSite();
+  return { ok: true };
+}
+
+/* ---------- About ---------- */
+
 export async function saveAbout(input: AboutContent): Promise<Result> {
   if (!(await isAdmin())) return fail(SESSION_EXPIRED);
 
   const { cloudName } = getCloudinary();
-  const photoUrl = input.photoUrl.trim();
+  const photoUrl = clean(input.photoUrl);
 
   if (photoUrl && !isCloudinaryUrl(photoUrl, cloudName)) {
     return fail("Upload your photo using this form.");
   }
-  if (!input.lead.trim()) return fail("Add an opening line for your bio.");
-
-  const clean = (value: string) => value.trim();
+  if (!clean(input.lead)) return fail("Add an opening line for your bio.");
 
   const data = {
     photoUrl,
@@ -294,11 +353,10 @@ export async function saveAbout(input: AboutContent): Promise<Result> {
   return { ok: true };
 }
 
-/* ---------- HERO ---------- */
+/* ---------- Hero ---------- */
+
 export async function saveHero(input: HeroContent): Promise<Result> {
   if (!(await isAdmin())) return fail(SESSION_EXPIRED);
-
-  const clean = (value: string) => value.trim();
 
   if (!clean(input.designWord) || !clean(input.devWord)) {
     return fail("Both headline words are required.");
@@ -341,11 +399,11 @@ export async function saveHero(input: HeroContent): Promise<Result> {
   return { ok: true };
 }
 
-/* ---------- CONTACTS ---------- */
+/* ---------- Contact ---------- */
+
 export async function saveContact(input: ContactContent): Promise<Result> {
   if (!(await isAdmin())) return fail(SESSION_EXPIRED);
 
-  const clean = (value: string) => value.trim();
   const email = clean(input.email);
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {

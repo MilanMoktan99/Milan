@@ -1,13 +1,16 @@
 import "server-only";
 import type { DocumentData } from "firebase-admin/firestore";
 import { adminDb } from "./firebase-admin";
-import type { AdminProject } from "@/types";
+import { parseBlocks } from "@/lib/blocks";
 import { DEFAULT_ABOUT } from "@/lib/content/about";
-import type { AboutContent } from "@/types";
 import { DEFAULT_HERO } from "@/lib/content/hero";
-import type { HeroContent } from "@/types";
 import { DEFAULT_CONTACT } from "@/lib/content/contact";
-import type { ContactContent } from "@/types";
+import type {
+  AboutContent,
+  AdminProject,
+  ContactContent,
+  HeroContent,
+} from "@/types";
 
 const str = (value: unknown) => (typeof value === "string" ? value : "");
 const strOrNull = (value: unknown) =>
@@ -30,6 +33,7 @@ function toAdminProject(slug: string, data: DocumentData): AdminProject {
     published: data.published === true,
     order: typeof data.order === "number" ? data.order : 999,
     updatedAt: data.updatedAt?.toDate?.().toISOString() ?? null,
+    blocks: parseBlocks(data.blocks),
   };
 }
 
@@ -60,14 +64,17 @@ export async function getAdminAbout(): Promise<AboutContent> {
       : [],
     values: Array.isArray(data.values) ? data.values.map(String) : [],
     experience: Array.isArray(data.experience)
-      ? data.experience.map((item, i) => ({
-          id: str((item as Record<string, unknown>)?.id) || `exp-${i}`,
-          period: str((item as Record<string, unknown>)?.period),
-          role: str((item as Record<string, unknown>)?.role),
-          company: str((item as Record<string, unknown>)?.company),
-          type: str((item as Record<string, unknown>)?.type),
-          description: str((item as Record<string, unknown>)?.description),
-        }))
+      ? data.experience.map((entry, i) => {
+          const item = entry as Record<string, unknown>;
+          return {
+            id: str(item?.id) || `exp-${i}`,
+            period: str(item?.period),
+            role: str(item?.role),
+            company: str(item?.company),
+            type: str(item?.type),
+            description: str(item?.description),
+          };
+        })
       : [],
   };
 }
@@ -108,8 +115,8 @@ export async function getAdminContact(): Promise<ContactContent> {
     message: str(data.message),
     email: str(data.email),
     socials: Array.isArray(data.socials)
-      ? data.socials.map((item, i) => {
-          const social = item as Record<string, unknown>;
+      ? data.socials.map((entry, i) => {
+          const social = entry as Record<string, unknown>;
           return {
             id: str(social.id) || `social-${i}`,
             label: str(social.label),

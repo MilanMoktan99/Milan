@@ -1,5 +1,24 @@
 export type ProjectType = "design" | "development";
 
+export type BlockImage = {
+  id: string;
+  url: string;
+  publicId: string;
+  alt: string;
+};
+
+export type CaseStudyBlock =
+  | { id: string; type: "overview"; items: { id: string; label: string; value: string }[] }
+  | { id: string; type: "heading"; text: string }
+  | { id: string; type: "text"; text: string }
+  | { id: string; type: "list"; title: string; items: string[] }
+  | { id: string; type: "image"; image: BlockImage; caption: string; wide: boolean }
+  | { id: string; type: "gallery"; images: BlockImage[]; caption: string }
+  | { id: string; type: "quote"; text: string; attribution: string }
+  | { id: string; type: "stats"; items: { id: string; value: string; label: string }[] };
+
+export type BlockType = CaseStudyBlock["type"];
+
 export type Project = {
   slug: string;
   name: string;
@@ -12,6 +31,7 @@ export type Project = {
   summary: string;
   featured: boolean;
   order: number;
+  blocks: CaseStudyBlock[];
 };
 
 export type ProjectInput = {
@@ -31,7 +51,7 @@ export type ProjectInput = {
   order: number;
 };
 
-export type AdminProject = ProjectInput & { updatedAt: string | null };
+export type AdminProject = ProjectInput & { updatedAt: string | null; blocks: CaseStudyBlock[] };
 
 // About Section
 export type Experience = {
